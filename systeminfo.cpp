@@ -774,3 +774,48 @@ SystemInfo::getNumTraits()
 {
    return( Trait::N );
 }
+
+std::string 
+SystemInfo::UTSNameInfo( const Trait t )
+{
+      struct utsname un;
+      std::memset( &un, 
+                   0,
+                   sizeof( struct utsname ) );
+      errno = 0;
+      if( uname( &un ) != 0 )
+      {
+         perror( "Failed to get umame data!!" );
+      }
+      switch( trait )
+      {
+         case( SystemName ):
+         {
+            return( std::string( un.sysname ) );     
+         }
+         break;
+         case( NodeName ):
+         {
+            return( std::string( un.nodename ) );
+         }
+         break;
+         case( OSRelease ):
+         {
+            return( std::string( un.release ) );
+         }
+         break;
+         case( OSVersion ):
+         {
+            return( std::string( un.version ) );
+         }
+         break;
+         case( MachineName ):
+         {
+            return( std::string( un.machine ) );
+         }
+         break;
+         default:
+            break;
+      }
+
+}
