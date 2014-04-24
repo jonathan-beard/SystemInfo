@@ -20,6 +20,9 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <cstdint>
+#include <cinttypes>
+
 #if __linux
 #include <unistd.h>
 #include <sys/sysinfo.h>
@@ -27,6 +30,10 @@
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#endif
+
+#if __APPLE__
+#include <sys/sysctl.h>
 #endif
 
 #include "systeminfo.hpp"
@@ -427,9 +434,292 @@ SystemInfo::getSystemProperty( const Trait trait )
       return( std::to_string( priority ) );
    }
 #elif __APPLE__
+   typedef int mib_t;
+   mib_t mib[4];
+   std::memset( mib, 0, sizeof( mib_t ) * 4 );
+   switch( trait )
+   {
+      case( LevelOneICacheSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_L1ICACHESIZE;
+         sysctl( mib, 
+                 2, 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelOneICacheAssociativity ):
+      {
+      }
+      break;
+      case( LevelOneICacheLineSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         sysctlbyname( "hw.cachelinesize", 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelOneDCacheSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_L1DCACHESIZE;
+         sysctl( mib, 
+                 2, 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelOneDCacheAssociativity ):
+      {
+      }
+      break;
+      case( LevelOneDCacheLineSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         sysctlbyname( "hw.cachelinesize", 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelTwoCacheSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_L2CACHESIZE;
+         sysctl( mib, 
+                 2, 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelTwoCacheAssociativity ):
+      {
+         uint64_t assoc( 0 );
+         size_t len( sizeof( assoc ) );
+         sysctlbyname( "machdep.cpu.cache.L2_associativity", 
+                 &assoc,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( assoc ) );
+      }
+      break;
+      case( LevelTwoCacheLineSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         sysctlbyname( "hw.cachelinesize", 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelThreeCacheSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_L3CACHESIZE;
+         sysctl( mib, 
+                 2, 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelThreeCacheAssociativity ):
+      {
+      }
+      break;
+      case( LevelThreeCacheLineSize ):
+      {
+         uint64_t size( 0 );
+         size_t len( sizeof( size ) );
+         sysctlbyname( "hw.cachelinesize", 
+                 &size,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( size ) );
+      }
+      break;
+      case( LevelFourCacheSize ):
+      {
+      }
+      break;
+      case( LevelFourCacheAssociativity ):
+      {
+      }
+      break;
+      case( LevelFourCacheLineSize ):
+      {
+      }
+      break;
+      case( NumberOfProcessors ):
+      {
+         mib[0] = CTL_HW;
+         mib[1] = HW_AVAILCPU;
+         uint32_t n_procs( 0 );
+         size_t len( sizeof( n_procs ) );
+         sysctl( mib, 
+                 2, 
+                 &n_procs, 
+                 &len, 
+                 nullptr, 
+                 0 );
+         return( std::to_string( n_procs ) );
+      }
+      break;
+      case( ProcessorName ):
+      {
+         const size_t buff_size( 1000 );
+         char buff[ buff_size ];
+         std::memset( buff,
+                      '\0',
+                      sizeof( char ) * buff_size );
 
+         size_t len( sizeof( char ) * buff_size );
+         sysctlbyname( "machdep.cpu.brand_string", 
+                 buff,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::string( buff ) );
+      }
+      break;
+      case( ProcessorFrequency ):
+      {
+         mib[0] = CTL_HW;
+         mib[1] = HW_CPU_FREQ;
+         uint64_t freq( 0 );
+         size_t len( sizeof( freq ) );
+         sysctl(  mib, 
+                  2, 
+                  &freq, 
+                  &len , 
+                  nullptr, 
+                  0 );
+         return( std::to_string( freq ) );
+      }
+      break;
+      case( SystemName ):
+      {
+         /** use utsname **/
+      }
+      break;
+      case( NodeName ):
+      {
+      }
+      break;
+      case( OSRelease ):
+      {
+      }
+      break;
+      case( OSVersion ):
+      {
+      }
+      break;
+      case( MachineName ):
+      {
+      }
+      break;
+      case( UpTime ):
+      {
+      }
+      break;
+      case( OneMinLoad ):
+      {
+      }
+      break;
+      case( FiveMinLoad ):
+      {
+      }
+      break;
+      case( FifteenMinLoad ):
+      {
+      }
+      break;
+      case( TotalMainMemory ):
+      {
+      }
+      break;
+      case( FreeRam ):
+      {
+      }
+      break;
+      case( SharedRam ):
+      {
+      }
+      break;
+      case( BufferRam ):
+      {
+      }
+      break;
+      case( TotalSwap ):
+      {
+      }
+      break;
+      case( FreeSwap ):
+      {
+      }
+      break;
+      case( NumberOfProcessesRunning ):
+      {
+      }
+      break;
+      case( TotalHighMemory ):
+      {
+      }
+      break;
+      case( FreeHighMemory ):
+      {
+      }
+      break;
+      case( MemoryUnit ):
+      {
+      }
+      break;
+      case( Scheduler ):
+      {
+      }
+      break;
+      case( Priority ):
+      {
+      }
+      break;
+      default:
+         break;
+   }
 #endif
-   return( 0 );
+   return( std::to_string( 0 ) );
 }
 
 std::string   

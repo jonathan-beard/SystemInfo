@@ -4,10 +4,10 @@
 int 
 main( int argc, char **argv )
 {
-   for( Trait t( LevelOneICacheSize ); t < Trait::N ; t++ )
+   for( int t( 0 ); t < (int) Trait::N ; t++ )
    {
-      std::cout << SystemInfo::getName( t ) << " - " << 
-         SystemInfo::getSystemProperty( t ) << "\n";
+      std::cout << SystemInfo::getName( (Trait) t ) << " - " << 
+         SystemInfo::getSystemProperty( (Trait) t ) << "\n";
    }
    return( EXIT_FAILURE );
 }
