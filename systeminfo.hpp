@@ -45,7 +45,9 @@ enum Trait {
    OSVersion,
    MachineName,
    UpTime,
-   Loads,
+   OneMinLoad,
+   FiveMinLoad,
+   FifteenMinLoad,
    TotalMainMemory,
    FreeRam,
    SharedRam,
@@ -56,6 +58,8 @@ enum Trait {
    TotalHighMemory,
    FreeHighMemory,
    MemoryUnit,
+   Scheduler,
+   Priority,
    N
 };
 

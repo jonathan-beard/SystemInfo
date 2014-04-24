@@ -23,6 +23,10 @@
 #if __linux
 #include <unistd.h>
 #include <sys/sysinfo.h>
+#include <sys/utsname.h>
+#include <sched.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #endif
 
 #include "systeminfo.hpp"
@@ -251,30 +255,176 @@ SystemInfo::getSystemProperty( const Trait trait )
    }
    else if( SystemName <= trait && trait <= MachineName )
    {
-      /*
-   SystemName,
-   NodeName,
-   OSRelease,
-   OSVersion,
-   MachineName,
-      */
+      struct utsname un;
+      std::memset( &un, 
+                   0,
+                   sizeof( struct utsname ) );
+      errno = 0;
+      if( uname( &un ) != 0 )
+      {
+         perror( "Failed to get umame data!!" );
+      }
+      switch( trait )
+      {
+         case( SystemName ):
+         {
+            return( std::string( un.sysname ) );     
+         }
+         break;
+         case( NodeName ):
+         {
+            return( std::string( un.nodename ) );
+         }
+         break;
+         case( OSRelease ):
+         {
+            return( std::string( un.release ) );
+         }
+         break;
+         case( OSVersion ):
+         {
+            return( std::string( un.version ) );
+         }
+         break;
+         case( MachineName ):
+         {
+            return( std::string( un.machine ) );
+         }
+         break;
+         default:
+            break;
+      }
    }
    else if( UpTime <= trait && trait <= MemoryUnit )
    {
-      /*
-   UpTime,
-   Loads,
-   TotalMainMemory,
-   FreeRam,
-   SharedRam,
-   BufferRam,
-   TotalSwap,
-   FreeSwap,
-   NumberOfProcessesRunning,
-   TotalHighMemory,
-   FreeHighMemory,
-   MemoryUnit,
-       */
+      struct sysinfo info;
+      std::memset( &info,
+                   0,
+                   sizeof( struct sysinfo ) );
+      errno = 0;
+      if( sysinfo( &info ) != 0 )
+      {
+         perror( "Failed to get sysinfo!!" );
+      }
+      switch( trait )
+      {
+         case( UpTime ):
+         {
+            return( std::to_string( info.uptime ) );   
+         }
+         break;
+         case( OneMinLoad ):
+         {
+            return( std::to_string( info.loads[0] ) );
+         }
+         break;
+         case( FiveMinLoad ):
+         {
+            return( std::to_string( info.loads[1] ) );
+         }
+         break;
+         case( FifteenMinLoad ):
+         {
+            return( std::to_string( info.loads[2] ) );
+         }
+         break;
+         case( TotalMainMemory ):
+         {
+            return( std::to_string( info.totalram ) );
+         }
+         break;
+         case( FreeRam ):
+         {
+            return( std::to_string( info.freeram ) );
+         }
+         break;
+         case( SharedRam ):
+         {
+            return( std::to_string( info.sharedram ) );
+         }
+         break;
+         case( BufferRam ):
+         {
+            return( std::to_string( info.bufferram ) );
+         }
+         break;
+         case( TotalSwap ):
+         {
+            return( std::to_string( info.totalswap ) );
+         }
+         break;
+         case( FreeSwap ):
+         {
+            return( std::to_string( info.freeswap ) );
+         }
+         break;
+         case( NumberOfProcessesRunning ):
+         {
+            return( std::to_string( info.procs ) );
+         }
+         break;
+         case( TotalHighMemory ):
+         {
+            return( std::to_string( info.totalhigh ) );
+         }
+         break;
+         case( FreeHighMemory ):
+         {
+            return( std::to_string( info.freehigh ) );
+         }
+         break;
+         case( MemoryUnit ):
+         {
+            return( std::to_string( info.mem_unit ) );
+         }
+         break;
+         default:
+         break;
+      }
+   }
+   else if( trait == Scheduler )
+   {
+      const int schedule( sched_getscheduler( 0 /* self */ ) );
+      switch( schedule )
+      {
+         case( SCHED_OTHER ):
+         {
+            return( "SCHED_OTHER" );
+         }
+         break;
+         case( SCHED_BATCH ):
+         {
+            return( "SCHED_BATCH" );
+         }
+         break;
+         case( SCHED_IDLE ):
+         {
+            return( "SCHED_IDLE" );
+         }
+         break;
+         case( SCHED_FIFO ):
+         {
+            return( "SCHED_FIFO" );
+         }
+         break;
+         case( SCHED_RR ):
+         {
+            return( "SCHED_RR" );
+         }
+         break;
+         default:
+         break;
+      }
+   }
+   else if( trait == Priority )
+   {
+      errno = 0;
+      int priority( getpriority( PRIO_PROCESS, 0 /* self */ ) );
+      if( errno != 0 )
+      {
+         perror( "Failed to get process priority" );
+      }
+      return( std::to_string( priority ) );
    }
 #elif __APPLE__
 
@@ -310,7 +460,9 @@ SystemInfo::getName( const Trait trait )
       "OSVersion",
       "MachineName",
       "UpTime",
-      "Loads",
+      "OneMinLoad",
+      "FiveMinLoad",
+      "FifteenMinLoad",
       "TotalMainMemory",
       "FreeRam",
       "SharedRam",
@@ -320,7 +472,9 @@ SystemInfo::getName( const Trait trait )
       "NumberOfProcessesRunning",
       "TotalHighMemory",
       "FreeHighMemory",
-      "MemoryUnit"
+      "MemoryUnit",
+      "Scheduler",
+      "Priority"
    };
    return( traitStrings[ trait ] );
 }
