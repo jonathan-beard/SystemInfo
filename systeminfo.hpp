@@ -19,8 +19,8 @@
  */
 #ifndef _SYSTEMINFO_HPP_
 #define _SYSTEMINFO_HPP_  1
-
-enum Traits {
+#include <string>
+enum Trait {
    LevelOneICacheSize = 0,
    LevelOneICacheAssociativity,
    LevelOneICacheLineSize,
@@ -38,8 +38,7 @@ enum Traits {
    LevelFourCacheLineSize,
    NumberOfProcessors,
    ProcessorName,
-   ProcessorMaxFrequency,
-   ProcessorMinFrequency,
+   ProcessorFrequency,
    SystemName,
    NodeName,
    OSRelease,
@@ -68,6 +67,6 @@ public:
 
    static std::string   getSystemProperty( const Trait trait );
    static std::string   getName( const Trait trait );
-   static Trait[ Trait::N ] getAllTraits();
+   static size_t        getNumTraits();
 };
 #endif /* END _SYSTEMINFO_HPP_ */

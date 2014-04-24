@@ -17,7 +17,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#if __linux
 #include <unistd.h>
+#include <sys/sysinfo.h>
+#endif
+
 #include "systeminfo.hpp"
 
 std::string
@@ -168,8 +175,158 @@ SystemInfo::getSystemProperty( const Trait trait )
          default:
             break;
       }
+      return( std::to_string( val ) );
+   }
+   else if( trait == NumberOfProcessors ) 
+   {
+      return( std::to_string( get_nprocs() ) ); 
+   }
+   else if( ProcessorName <= trait && trait <= ProcessorFrequency )
+   {
+      /**
+       * A bit ugly since we're processing /proc/cpuinfo
+       */
+      const std::string name( "model name" );
+      const std::string freq( "cpu MHz" );
+      FILE *fp( nullptr );
+      errno = 0;
+      fp = fopen( "/proc/cpuinfo", "r" );
+      if( fp == nullptr )
+      {
+         perror( "Failed to open /proc/cpuinfo" );
+         exit( EXIT_FAILURE );
+      }
+      const size_t buff_size( 100 );
+      char  key[ buff_size ];
+      char  value[ buff_size ];
+      std::memset( &key, '\0', sizeof( char ) * buff_size );
+      std::memset( &value, '\0', sizeof( char ) * buff_size );
+      switch( trait )
+      {
+         case( ProcessorName ):
+         {
+            int count = EOF;
+            while( (count = fscanf( fp, "%[^:]:%[^\n]\n", key, value ) ) != EOF )
+            {
+               if( count == 2 )
+               {
+                  if( strncmp( key, name.c_str() , name.length() - 1 ) == 0 )
+                  {
+                     fclose( fp );
+                     return( std::string( value ) ); 
+                  }
+               }
+            }
+         }
+         break;
+         case( ProcessorFrequency ):
+         {
+            int count = EOF;
+            while( (count = fscanf( fp, "%[^:]:%[^\n]\n", key, value ) ) != EOF )
+            {
+               if( count == 2 )
+               {
+                  if( strncmp( key, freq.c_str() , freq.length() - 1 ) == 0 )
+                  {
+                     fclose( fp );
+                     errno = 0;
+                     uint64_t frequency( strtof( value, (char**)NULL) * 1e6f );
+                     if( errno != 0 )
+                     {
+                        perror( "Failed to convert frequency from /proc/cpuinfo" );
+                        exit( EXIT_FAILURE );
+                     }
+                     return( std::to_string( frequency ) );
+                  }
+               }
+            }
+
+
+         }
+         break;
+         default:
+            /* we'll return default zero at this point */
+         break;
+      }
+   }
+   else if( SystemName <= trait && trait <= MachineName )
+   {
+      /*
+   SystemName,
+   NodeName,
+   OSRelease,
+   OSVersion,
+   MachineName,
+      */
+   }
+   else if( UpTime <= trait && trait <= MemoryUnit )
+   {
+      /*
+   UpTime,
+   Loads,
+   TotalMainMemory,
+   FreeRam,
+   SharedRam,
+   BufferRam,
+   TotalSwap,
+   FreeSwap,
+   NumberOfProcessesRunning,
+   TotalHighMemory,
+   FreeHighMemory,
+   MemoryUnit,
+       */
    }
 #elif __APPLE__
 
 #endif
+   return( 0 );
+}
+
+std::string   
+SystemInfo::getName( const Trait trait )
+{
+   static const std::string traitStrings[ Trait::N ] = {
+      "LevelOneICacheSize",
+      "LevelOneICacheAssociativity",
+      "LevelOneICacheLineSize",
+      "LevelOneDCacheSize",
+      "LevelOneDCacheAssociativity",
+      "LevelOneDCacheLineSize",
+      "LevelTwoCacheSize",
+      "LevelTwoCacheAssociativity",
+      "LevelTwoCacheLineSize",
+      "LevelThreeCacheSize",
+      "LevelThreeCacheAssociativity",
+      "LevelThreeCacheLineSize",
+      "LevelFourCacheSize",
+      "LevelFourCacheAssociativity",
+      "LevelFourCacheLineSize",
+      "NumberOfProcessors",
+      "ProcessorName",
+      "ProcessorFrequency",
+      "SystemName",
+      "NodeName",
+      "OSRelease",
+      "OSVersion",
+      "MachineName",
+      "UpTime",
+      "Loads",
+      "TotalMainMemory",
+      "FreeRam",
+      "SharedRam",
+      "BufferRam",
+      "TotalSwap",
+      "FreeSwap",
+      "NumberOfProcessesRunning",
+      "TotalHighMemory",
+      "FreeHighMemory",
+      "MemoryUnit"
+   };
+   return( traitStrings[ trait ] );
+}
+
+size_t
+SystemInfo::getNumTraits()
+{
+   return( Trait::N );
 }
