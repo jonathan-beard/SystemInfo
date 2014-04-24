@@ -817,5 +817,6 @@ SystemInfo::UTSNameInfo( const Trait t )
          default:
             break;
       }
+      return( std::string( 0 ) );
 
 }
