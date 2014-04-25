@@ -35,6 +35,7 @@
 #if __APPLE__
 #include <errno.h>
 #include <sys/sysctl.h>
+#include <libProc.h>
 #endif
 
 #include "systeminfo.hpp"
@@ -604,26 +605,109 @@ SystemInfo::getSystemProperty( const Trait trait )
       break;
       case( UpTime ):
       {
+         struct timeval uptime;
+         size_t   len( sizeof( struct timeval ) );
+         std::memset( &uptime, 0, len );
+         mib[ 0 ] = CTL_KERN;
+         mib[ 1 ] = KERN_BOOTTIME;
+         errno = 0;
+         if( sysctl( mib, 2, &uptime, &len, nullptr, 0 ) != 0 )
+         {
+            perror( "Failed to get uptime!" );
+         }
+         double sec( uptime.tv_sec );
+         const double us( uptime.tv_usec * 1e-6f );
+         sec += us;
+         return( std::to_string( sec ) );
       }
       break;
       case( OneMinLoad ):
       {
+         struct loadavg load;
+         size_t len( sizeof( struct loadavg ) );
+         std::memset( &load, 0, len );
+         sysctlbyname( "vm.loadavg", 
+                 &load,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( (double) load.ldavg[0] / (double ) load.fscale ) );
       }
       break;
       case( FiveMinLoad ):
       {
+         struct loadavg load;
+         size_t len( sizeof( struct loadavg ) );
+         std::memset( &load, 0, len );
+         sysctlbyname( "vm.loadavg", 
+                 &load,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( (double) load.ldavg[1] / (double ) load.fscale ) );
       }
       break;
       case( FifteenMinLoad ):
       {
+         struct loadavg load;
+         size_t len( sizeof( struct loadavg ) );
+         std::memset( &load, 0, len );
+         sysctlbyname( "vm.loadavg", 
+                 &load,
+                 &len,
+                 NULL,
+                 0 );
+         return( std::to_string( (double) load.ldavg[2] / (double ) load.fscale ) );
       }
       break;
       case( TotalMainMemory ):
       {
+         uint64_t physmem( 0 );
+         size_t   len( sizeof( physmem ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_MEMSIZE;
+         errno = 0;
+         if( sysctl( mib,
+                        2,
+                        &physmem,
+                        &len,
+                        nullptr,
+                        0 ) != 0 )
+         {
+            perror( "Failed to get physical mem from sysctl." );
+         }
+         return( std::to_string( physmem ) );
       }
       break;
       case( FreeRam ):
       {
+         /** get page size **/
+         uint64_t pagesize( 0 );
+         size_t   len( sizeof( pagesize ) );
+         mib[0] = CTL_HW;
+         mib[1] = HW_PAGESIZE;
+         errno = 0;
+         if( sysctl( mib,
+                     2,
+                     &pagesize,
+                     &len,
+                     nullptr,
+                     0 ) != 0 )
+         {
+            perror( "Failed to get page size." );
+         }
+         uint64_t freepagecount( 0 );
+         len = ( sizeof( freepagecount ) );
+         errno = 0;
+         if( sysctlbyname( "vm.page_free_count",
+                           &freepagecount,
+                           &len,
+                           nullptr,
+                           0 ) != 0 )
+         {
+            perror( "Failed to get free page count." );
+         }
+         return( std::to_string( pagesize * freepagecount ) );
       }
       break;
       case( SharedRam ):
@@ -636,14 +720,45 @@ SystemInfo::getSystemProperty( const Trait trait )
       break;
       case( TotalSwap ):
       {
+          struct xsw_usage swap;
+          size_t len( sizeof(  struct xsw_usage ) );
+          std::memset( &swap, 0 , len );
+          errno = 0;
+          if( sysctlbyname( "vm.swapusage",
+                            &swap,
+                            &len,
+                            nullptr,
+                            0 ) != 0 )
+          {
+            perror( "Failed to get swap usage" );
+          }
+          return( std::to_string( swap.xsu_total ) );
       }
       break;
       case( FreeSwap ):
       {
+          struct xsw_usage swap;
+          size_t len( sizeof(  struct xsw_usage ) );
+          std::memset( &swap, 0 , len );
+          errno = 0;
+          if( sysctlbyname( "vm.swapusage",
+                            &swap,
+                            &len,
+                            nullptr,
+                            0 ) != 0 )
+          {
+            perror( "Failed to get swap usage" );
+          }
+          return( std::to_string( swap.xsu_avail ) );
       }
       break;
       case( NumberOfProcessesRunning ):
       {
+         const auto numberOfProcesses( proc_listpids( PROC_ALL_PIDS,
+                                                      0,
+                                                      nullptr,
+                                                      0 ) );
+         return( std::to_string( numberOfProcesses ) );
       }
       break;
       case( TotalHighMemory ):
@@ -656,14 +771,36 @@ SystemInfo::getSystemProperty( const Trait trait )
       break;
       case( MemoryUnit ):
       {
+         return( std::to_string( 1 ) );
       }
       break;
       case( Scheduler ):
       {
+         const size_t buff_size( 100 );
+         char buffer[ buff_size ];
+         std::memset( buffer, '\0', buff_size * sizeof( char ) );
+         size_t len( buff_size );
+         errno = 0;
+         if( sysctlbyname( "kern.sched",
+                           buffer,
+                           &len,
+                           nullptr,
+                           0 ) != 0 )
+         {
+            perror( "Failed to get scheduler." );
+         }
+         return( std::string( buffer ) );
       }
       break;
       case( Priority ):
       {
+         errno = 0;
+         int priority( getpriority( PRIO_PROCESS, 0 /* self */ ) );
+         if( errno != 0 )
+         {
+            perror( "Failed to get process priority" );
+         }
+         return( std::to_string( priority ) );
       }
       break;
       default:
