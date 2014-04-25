@@ -73,7 +73,7 @@ public:
    static std::string   getName( const Trait trait );
    static size_t        getNumTraits();
 protected:
-   static std::string   getUTSNameInfo();
+   static std::string   getUTSNameInfo( const Trait t );
 
 };
 #endif /* END _SYSTEMINFO_HPP_ */

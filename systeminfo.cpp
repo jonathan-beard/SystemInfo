@@ -22,17 +22,18 @@
 #include <cstring>
 #include <cstdint>
 #include <cinttypes>
+#include <sys/utsname.h>
 
 #if __linux
 #include <unistd.h>
 #include <sys/sysinfo.h>
-#include <sys/utsname.h>
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
 
 #if __APPLE__
+#include <errno.h>
 #include <sys/sysctl.h>
 #endif
 
@@ -262,45 +263,7 @@ SystemInfo::getSystemProperty( const Trait trait )
    }
    else if( SystemName <= trait && trait <= MachineName )
    {
-      struct utsname un;
-      std::memset( &un, 
-                   0,
-                   sizeof( struct utsname ) );
-      errno = 0;
-      if( uname( &un ) != 0 )
-      {
-         perror( "Failed to get umame data!!" );
-      }
-      switch( trait )
-      {
-         case( SystemName ):
-         {
-            return( std::string( un.sysname ) );     
-         }
-         break;
-         case( NodeName ):
-         {
-            return( std::string( un.nodename ) );
-         }
-         break;
-         case( OSRelease ):
-         {
-            return( std::string( un.release ) );
-         }
-         break;
-         case( OSVersion ):
-         {
-            return( std::string( un.version ) );
-         }
-         break;
-         case( MachineName ):
-         {
-            return( std::string( un.machine ) );
-         }
-         break;
-         default:
-            break;
-      }
+      return( SystemInfo::getUTSNameInfo( trait ) );
    }
    else if( UpTime <= trait && trait <= MemoryUnit )
    {
@@ -631,24 +594,12 @@ SystemInfo::getSystemProperty( const Trait trait )
       }
       break;
       case( SystemName ):
-      {
-         /** use utsname **/
-      }
-      break;
       case( NodeName ):
-      {
-      }
-      break;
       case( OSRelease ):
-      {
-      }
-      break;
       case( OSVersion ):
-      {
-      }
-      break;
       case( MachineName ):
       {
+         return( SystemInfo::getUTSNameInfo( trait ) );
       }
       break;
       case( UpTime ):
@@ -776,7 +727,7 @@ SystemInfo::getNumTraits()
 }
 
 std::string 
-SystemInfo::UTSNameInfo( const Trait t )
+SystemInfo::getUTSNameInfo( const Trait t )
 {
       struct utsname un;
       std::memset( &un, 
@@ -787,7 +738,7 @@ SystemInfo::UTSNameInfo( const Trait t )
       {
          perror( "Failed to get umame data!!" );
       }
-      switch( trait )
+      switch( t )
       {
          case( SystemName ):
          {
@@ -818,5 +769,4 @@ SystemInfo::UTSNameInfo( const Trait t )
             break;
       }
       return( std::string( 0 ) );
-
 }
