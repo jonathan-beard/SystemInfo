@@ -20,6 +20,13 @@
 #ifndef _SYSTEMINFO_HPP_
 #define _SYSTEMINFO_HPP_  1
 #include <string>
+
+/**
+ * enum Trait - defines all the system parameters
+ * for which we typically have information and 
+ * corresponding methods are defined internally
+ * to get the information.
+ */
 enum Trait {
    LevelOneICacheSize = 0,
    LevelOneICacheAssociativity,
@@ -69,10 +76,35 @@ public:
    SystemInfo()            = delete;
    virtual ~SystemInfo()   = delete;
 
+   /**
+    * getSystemProperty - call with a trait from the enum defined
+    * above, returns the property from whatever system / processor
+    * calls are available.  If there is no info for that field then
+    * zero is returned as a string.
+    * @param trait - const Trait
+    * @return  - std::string representation of the system property
+    */
    static std::string   getSystemProperty( const Trait trait );
+   /**
+    * getName - raturn the string name of the trait passed in
+    * by the parameter.
+    * @param   trait - const Trait
+    * @return  std::string - name of system trait
+    */
    static std::string   getName( const Trait trait );
+   /**
+    * getNumTraits - returns the total number of defined traits, which
+    * is the value Trait::N defined above.
+    * @return  size_t - number of traits.
+    */
    static size_t        getNumTraits();
 protected:
+   /**
+    * getUTSNameInfo - helper method to get UTSName info for both
+    * OS X and Linux platforms.
+    * @param t - const Trait
+    * @return  - std::string - string representation of sytem property
+    */
    static std::string   getUTSNameInfo( const Trait t );
 
 };

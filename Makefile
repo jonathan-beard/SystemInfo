@@ -3,7 +3,7 @@ FILES = $(addsuffix .cpp, $(CPPFILES) )
 OBJS  = $(addsuffix .o, $(CPPFILES) )
 
 CXX 		= clang++
-CXXFLAGS = -std=c++11 -O0 -g
+CXXFLAGS = -std=c++11 -O2 --static
 
 compile: $(FILES)
 	$(MAKE) $(OBJS)
