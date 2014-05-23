@@ -27,9 +27,21 @@
 #if __linux
 #include <unistd.h>
 #include <sys/sysinfo.h>
+#ifndef __USE_GNU
+#define __USE_GNU 1
+#endif
 #include <sched.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+/** just in case thee aren't defined, go ahead and define them **/
+#ifndef  SCHED_BATCH
+#define  SCHED_BATCH 3
+#endif
+#ifndef  SCHED_IDLE
+#define  SCHED_IDLE  5
+#endif
+
 #endif
 
 #if __APPLE__
@@ -226,6 +238,7 @@ SystemInfo::getSystemProperty( const Trait trait )
                   if( strncmp( key, name.c_str() , name.length() - 1 ) == 0 )
                   {
                      fclose( fp );
+                     fp = nullptr;
                      return( std::string( value ) ); 
                   }
                }
@@ -242,6 +255,7 @@ SystemInfo::getSystemProperty( const Trait trait )
                   if( strncmp( key, freq.c_str() , freq.length() - 1 ) == 0 )
                   {
                      fclose( fp );
+                     fp = nullptr;
                      errno = 0;
                      uint64_t frequency( strtof( value, (char**)NULL) * 1e6f );
                      if( errno != 0 )
@@ -260,6 +274,11 @@ SystemInfo::getSystemProperty( const Trait trait )
          default:
             /* we'll return default zero at this point */
          break;
+      }
+      if( fp != nullptr )
+      {
+         fclose( fp );
+         fp = nullptr;
       }
    }
    else if( SystemName <= trait && trait <= MachineName )
