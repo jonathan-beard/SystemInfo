@@ -22,6 +22,14 @@
 #include <string>
 
 /**
+ * TODO list:
+ * 1) Add getrlimit info
+ * 2) Add /proc info such as context swap data, add option of specifying thread/proc id
+ * 3) Add /proc/<pid>/stat info
+ * 4) Add processor specific performance monitors, which will enable things like branch predictors,etc.
+ */
+
+/**
  * enum Trait - defines all the system parameters
  * for which we typically have information and 
  * corresponding methods are defined internally
